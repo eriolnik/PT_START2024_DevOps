@@ -596,7 +596,7 @@ def get_log_lines(limit):
                                     database=database)
 
         cursor = connection.cursor()
-        cursor.execute("SELECT pg_read_file('/var/log/postgresql/postgresql.log') AS log_content;")
+        cursor.execute("SELECT pg_read_file('/var/log/postgresql/postgresql-14-main.log') AS log_content;")
         result = cursor.fetchone()
         if result:
             log_content = result[0]
