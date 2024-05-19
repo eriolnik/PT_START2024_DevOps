@@ -95,7 +95,7 @@ def confirmPhoneNumbers(update: Update, context):
             phoneNumbers = context.user_data.get('phone_numbers', [])
             print(phoneNumbers)
             for phone_number in phoneNumbers:
-                cursor.execute(f"INSERT INTO phone (phone_number) VALUES ('{phone_number}');")
+                cursor.execute(f"INSERT INTO phone (phone) VALUES ('{phone_number}');")
             connection.commit()
             update.message.reply_text('Номера успешно записаны в базу данных!')
             logging.info("Команда успешно выполнена")
@@ -167,7 +167,7 @@ def confiremail(update: Update, context):
             emails = context.user_data.get('EMAILS', [])
             print(emails)
             for email in emails:
-                cursor.execute(f"INSERT INTO email (email_address) VALUES ('{email}');")
+                cursor.execute(f"INSERT INTO mail (mail) VALUES ('{email}');")
             connection.commit()
             update.message.reply_text('Email успешно добавлен!')
             logging.info("Команда успешно выполнена")
@@ -526,7 +526,7 @@ def get_emails(update: Update, context):
                                     database=database)
 
         cursor = connection.cursor()
-        cursor.execute("SELECT email_address FROM email;")
+        cursor.execute("SELECT * FROM mail;")
         data = cursor.fetchall()
         for row in data:
             print(row)
@@ -556,7 +556,7 @@ def get_phone_numbers(update: Update, context):
                                     database=database)
 
         cursor = connection.cursor()
-        cursor.execute("SELECT phone_number FROM phone;")
+        cursor.execute("SELECT * FROM phone;")
         data = cursor.fetchall()
         for row in data:
             print(row)
@@ -582,7 +582,7 @@ def get_repl_logs(update: Update, context):
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     client.connect(hostname=host, username=username, password=password, port=port)
-    stdin, stdout, stderr = client.exec_command('cat /var/log/postgresql/postgresql-14-main.log')
+    stdin, stdout, stderr = client.exec_command('grep replic /var/log/postgresql/postgresql-14-main.log')
     
     data = stdout.read() + stderr.read()
     client.close()
