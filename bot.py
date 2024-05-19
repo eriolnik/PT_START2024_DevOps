@@ -596,14 +596,14 @@ def get_log_lines(limit):
                                     database=database)
 
         cursor = connection.cursor()
-        cursor.execute("SELECT pg_read_file('/var/log/postgresql/postgresql-14-main.log') AS log_content;")
+        cursor.execute("SELECT pg_read_file('/var/log/postgresql/postgresql.log') AS log_content;")
         result = cursor.fetchone()
         if result:
             log_content = result[0]
             # Split log content into lines
             lines = log_content.split('\n')
             # Filter lines containing "replication" (case insensitive)
-            replication_lines = [line for line in lines if 'replication' in line.lower()]
+            replication_lines = [line for line in lines if 'repl' in line.lower()]
             # Return only the first 'limit' lines
             return '\n'.join(replication_lines[:limit])
         else:
