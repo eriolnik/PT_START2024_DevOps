@@ -603,7 +603,7 @@ def get_log_lines(limit):
             # Split log content into lines
             lines = log_content.split('\n')
             # Filter lines containing "replication" (case insensitive)
-            replication_lines = [line for line in lines if 'replication' in line.lower()]
+            replication_lines = [line for line in lines if 'repl' in line.lower()]
             # Return only the first 'limit' lines
             return '\n'.join(replication_lines[:limit])
         else:
