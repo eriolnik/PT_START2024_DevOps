@@ -94,9 +94,8 @@ def confirmPhoneNumbers(update: Update, context):
             cursor = connection.cursor()
             phoneNumbers = context.user_data.get('phone_numbers', [])
             print(phoneNumbers)
-
             for phone_number in phoneNumbers:
-                cursor.execute(f"INSERT INTO phone (phone) VALUES ('{phone_number}');")
+                cursor.execute(f"INSERT INTO phone (phone_number) VALUES ('{phone_number}');")
             connection.commit()
             update.message.reply_text('Номера успешно записаны в базу данных!')
             logging.info("Команда успешно выполнена")
@@ -167,9 +166,8 @@ def confiremail(update: Update, context):
 
             emails = context.user_data.get('EMAILS', [])
             print(emails)
-
             for email in emails:
-                cursor.execute(f"INSERT INTO mail (mail) VALUES ('{email}');")
+                cursor.execute(f"INSERT INTO email (email_address) VALUES ('{email}');")
             connection.commit()
             update.message.reply_text('Email успешно добавлен!')
             logging.info("Команда успешно выполнена")
@@ -528,7 +526,7 @@ def get_emails(update: Update, context):
                                     database=database)
 
         cursor = connection.cursor()
-        cursor.execute("SELECT * FROM mail;")
+        cursor.execute("SELECT email_address FROM email;")
         data = cursor.fetchall()
         for row in data:
             print(row)
@@ -558,7 +556,7 @@ def get_phone_numbers(update: Update, context):
                                     database=database)
 
         cursor = connection.cursor()
-        cursor.execute("SELECT * FROM phone;")
+        cursor.execute("SELECT phone_number FROM phone;")
         data = cursor.fetchall()
         for row in data:
             print(row)
@@ -572,49 +570,26 @@ def get_phone_numbers(update: Update, context):
             connection.close()
         return ConversationHandler.END
     
+
 def get_repl_logs(update: Update, context):
-    try:
-        log_lines = get_log_lines(20)
-        update.message.reply_text(log_lines)
-        return ConversationHandler.END
-    except Exception as e:
-        update.message.reply_text(f"Error: {e}")
-        return ConversationHandler.END
-
-def get_log_lines(limit):
+    
     load_dotenv()
-    host = os.getenv('DB_HOST')
-    port = os.getenv('DB_PORT')
-    username = os.getenv('DB_USER')
-    password = os.getenv('DB_PASSWORD')
-    database = os.getenv('DB_DATABASE')
-    connection = None
-    try:
-        connection = psycopg2.connect(user=username,
-                                    password=password,
-                                    host=host,
-                                    port=port, 
-                                    database=database)
+    host = os.getenv('RM_HOST')
+    port = os.getenv('RM_PORT')
+    username = os.getenv('RM_USER')
+    password = os.getenv('RM_PASSWORD')
 
-        cursor = connection.cursor()
-        cursor.execute("SELECT pg_read_file('/var/log/postgresql/postgresql.log') AS log_content;")
-        result = cursor.fetchone()
-        if result:
-            log_content = result[0]
-            # Split log content into lines
-            lines = log_content.split('\n')
-            # Filter lines containing "replication" (case insensitive)
-            replication_lines = [line for line in lines if 'replication' in line.lower()]
-            # Return only the first 'limit' lines
-            return '\n'.join(replication_lines[:limit])
-        else:
-            return "File content not found"
-    except (Exception, Error) as error:
-        return f"Error retrieving file content: {error}"
-    finally:
-        if connection is not None:
-            cursor.close()
-            connection.close()
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(hostname=host, username=username, password=password, port=port)
+    stdin, stdout, stderr = client.exec_command('grep replic /var/log/postgresql/postgresql-14-main.log')
+    
+    data = stdout.read() + stderr.read()
+    client.close()
+    data = str(data).replace('\\n', '\n').replace('\\t', '\t')[2:-1]
+    print(data)
+    update.message.reply_text(data)
+    return ConversationHandler.END
 
 def main():
     updater = Updater(TOKEN, use_context=True)
