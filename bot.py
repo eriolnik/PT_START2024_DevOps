@@ -572,24 +572,48 @@ def get_phone_numbers(update: Update, context):
     
 
 def get_repl_logs(update: Update, context):
-    
-    load_dotenv()
-    host = os.getenv('RM_HOST')
-    port = os.getenv('RM_PORT')
-    username = os.getenv('RM_USER')
-    password = os.getenv('RM_PASSWORD')
+    try:
+        log_lines = get_log_lines(20)
+        update.message.reply_text(log_lines)
+        return ConversationHandler.END
+    except Exception as e:
+        update.message.reply_text(f"Error: {e}")
+        return ConversationHandler.END
 
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(hostname=host, username=username, password=password, port=port)
-    stdin, stdout, stderr = client.exec_command('grep replic /var/log/postgresql/postgresql-14-main.log')
-    
-    data = stdout.read() + stderr.read()
-    client.close()
-    data = str(data).replace('\\n', '\n').replace('\\t', '\t')[2:-1]
-    print(data)
-    update.message.reply_text(data)
-    return ConversationHandler.END
+def get_log_lines(limit):
+    load_dotenv()
+    host = os.getenv('DB_HOST')
+    port = os.getenv('DB_PORT')
+    username = os.getenv('DB_USER')
+    password = os.getenv('DB_PASSWORD')
+    database = os.getenv('DB_DATABASE')
+    connection = None
+    try:
+        connection = psycopg2.connect(user=username,
+                                    password=password,
+                                    host=host,
+                                    port=port, 
+                                    database=database)
+
+        cursor = connection.cursor()
+        cursor.execute("SELECT pg_read_file('/var/log/postgresql/postgresql-14-main.log') AS log_content;")
+        result = cursor.fetchone()
+        if result:
+            log_content = result[0]
+            # Split log content into lines
+            lines = log_content.split('\n')
+            # Filter lines containing "replication" (case insensitive)
+            replication_lines = [line for line in lines if 'replication' in line.lower()]
+            # Return only the first 'limit' lines
+            return '\n'.join(replication_lines[:limit])
+        else:
+            return "File content not found"
+    except (Exception, Error) as error:
+        return f"Error retrieving file content: {error}"
+    finally:
+        if connection is not None:
+            cursor.close()
+            connection.close()
 
 def main():
     updater = Updater(TOKEN, use_context=True)
