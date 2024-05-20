@@ -581,24 +581,13 @@ def get_phone_numbers(update: Update, context):
     
 
 def get_repl_logs(update: Update, context):
-    
-    load_dotenv()
-    host = os.getenv('RM_HOST')
-    port = os.getenv('RM_PORT')
-    username = os.getenv('RM_USER')
-    password = os.getenv('RM_PASSWORD')
-
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(hostname=host, username=username, password=password, port=port)
-    stdin, stdout, stderr = client.exec_command('grep replic /var/log/postgresql/postgresql.log')
-    
-    data = stdout.read() + stderr.read()
-    client.close()
-    data = str(data).replace('\\n', '\n').replace('\\t', '\t')[2:-1]
-    print(data)
-    update.message.reply_text(data)
-    return ConversationHandler.END
+    try:
+        log_lines = get_log_lines(20)
+        update.message.reply_text(log_lines)
+        return ConversationHandler.END
+    except Exception as e:
+        update.message.reply_text(f"Error: {e}")
+        return ConversationHandler.END
 
 def get_log_lines(limit):
     load_dotenv()
