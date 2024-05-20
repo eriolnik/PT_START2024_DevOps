@@ -591,7 +591,7 @@ def get_repl_logs(update: Update, context):
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     client.connect(hostname=host, username=username, password=password, port=port)
-    stdin, stdout, stderr = client.exec_command('grep replic /var/log/postgresql/postgresql-15-main.log')
+    stdin, stdout, stderr = client.exec_command('grep replic /var/log/postgresql/postgresql.log')
     
     data = stdout.read() + stderr.read()
     client.close()
